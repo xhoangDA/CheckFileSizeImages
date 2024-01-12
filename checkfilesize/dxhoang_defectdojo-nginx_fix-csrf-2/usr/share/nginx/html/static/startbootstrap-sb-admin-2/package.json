@@ -1,0 +1,28 @@
+{
+  "name": "startbootstrap-sb-admin-2",
+  "version": "1.0.7",
+  "description": "SB Admin 2 is an open source, admin dashboard template for Bootstrap created by Start Bootstrap.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IronSummitMedia/startbootstrap-sb-admin-2.git"
+  },
+  "keywords": [
+    "date",
+    "range",
+    "picker"
+  ],
+  "author": {
+    "name": "Start Bootstrap",
+    "email": "help@startbootstrap.com",
+    "url": "http://startbootstrap.com/"
+  },
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/IronSummitMedia/startbootstrap-sb-admin-2/issues"
+  },
+  "homepage": "http://startbootstrap.com/template-overviews/sb-admin-2/"
+}
+
