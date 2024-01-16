@@ -151,7 +151,7 @@ def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, version, 
         ws["F2"] = "Số files: 0 - Dung lượng: " + totalSize(filesDir1) + "MB"
     else:
         ws["F2"] = "Số files: " +  countFiles(filesDir1) + " - Dung lượng: " + totalSize(filesDir1) + "MB"
-    ws["B3"] = f"Old image: {image2}"
+    ws["B3"] = f"New image: {image2}"
     ws["F3"] = "Số files: " +  countFiles(filesDir2) + " - Dung lượng: " + totalSize(filesDir2) + "MB"
     # fieldNames = ["STT", version, "Tình trạng", "Dung lượng cũ (KB)", "Dung lượng mới (KB)", "Chênh lệch (B)", "Mục đích sử dụng", "Ghi chú"]
     fieldNames = ["STT", version, "Tình trạng", "Dung lượng cũ (KB)", "Dung lượng mới (KB)", "Chênh lệch (B)", "Mục đích sử dụng", "Ghi chú", "File extension", "Header file"]
