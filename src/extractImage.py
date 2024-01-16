@@ -184,18 +184,27 @@ def process_to_copy_from_container_to_host(image_name):
 
 def clean(containerID1, containerID2, image1, image2, storedPath1, storedPath2):
     try:
-        # Sử dụng subprocess để chạy lệnh docker pull
-        # Clean containers
-        cleanContainer1 = subprocess.run(['docker', 'rm', containerID1], check=True, capture_output=True, text=True)
-        cleanContainer2 = subprocess.run(['docker', 'rm', containerID2], check=True, capture_output=True, text=True)
-        # Clean images
-        cleanImage1 = subprocess.run(['docker', 'rmi', image1, '--force'], check=True, capture_output=True, text=True)
-        cleanImage2 = subprocess.run(['docker', 'rmi', image2, '--force'], check=True, capture_output=True, text=True)        
-        # Clean data in disk
-        cleanDisk1 = subprocess.run(['rm', '-rf', storedPath1], check=True, capture_output=True, text=True)        
-        cleanDisk2 = subprocess.run(['rm', '-rf', storedPath2], check=True, capture_output=True, text=True) 
-        cleanReturnCode = [cleanContainer1.returncode, cleanContainer2.returncode, cleanImage1.returncode, cleanImage2.returncode, cleanDisk1.returncode, cleanDisk2.returncode]
-        return cleanReturnCode
+        if containerID1 != None and image1 != None and storedPath1 != None:
+            # Clean containers
+            cleanContainer1 = subprocess.run(['docker', 'rm', containerID1], check=True, capture_output=True, text=True)
+            cleanContainer2 = subprocess.run(['docker', 'rm', containerID2], check=True, capture_output=True, text=True)
+            # Clean images
+            cleanImage1 = subprocess.run(['docker', 'rmi', image1, '--force'], check=True, capture_output=True, text=True)
+            cleanImage2 = subprocess.run(['docker', 'rmi', image2, '--force'], check=True, capture_output=True, text=True)        
+            # Clean data in disk
+            cleanDisk1 = subprocess.run(['rm', '-rf', storedPath1], check=True, capture_output=True, text=True)        
+            cleanDisk2 = subprocess.run(['rm', '-rf', storedPath2], check=True, capture_output=True, text=True) 
+            cleanReturnCode = [cleanContainer1.returncode, cleanContainer2.returncode, cleanImage1.returncode, cleanImage2.returncode, cleanDisk1.returncode, cleanDisk2.returncode]
+            return cleanReturnCode
+        else:
+            # Clean container
+            cleanContainer2 = subprocess.run(['docker', 'rm', containerID2], check=True, capture_output=True, text=True)
+            # Clean images
+            cleanImage2 = subprocess.run(['docker', 'rmi', image2, '--force'], check=True, capture_output=True, text=True)        
+            # Clean data in disk
+            cleanDisk2 = subprocess.run(['rm', '-rf', storedPath2], check=True, capture_output=True, text=True) 
+            cleanReturnCode = [cleanContainer2.returncode,  cleanImage2.returncode, cleanDisk2.returncode]
+            return cleanReturnCode
     except subprocess.CalledProcessError as e:
         log(f"\tERROR: Dọn dẹp thất bại. ❌")
         print(f"==> Error detail: {e.stderr}")
