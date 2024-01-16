@@ -2,10 +2,6 @@ import re
 import subprocess
 import datetime
 
-# def pull_image(image):
-#     subprocess.getoutput(f"docker images -f reference={image}")
-#     output = subprocess.getoutput(f"docker pull {image}")
-#     return output
 def log(message):
     current_time = datetime.datetime.now()
     formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -19,18 +15,6 @@ def checkExistImage(imageName):
     except subprocess.CalledProcessError as e:
         error = e.stderr
 
-def pullDockerImage(imageName):
-    try:
-        # Kiểm tra image đã tồn tại trên máy chưa
-        checkExist = subprocess.run(["docker", "image", "inspect",imageName], check=True, capture_output=True, text=True)
-        if checkExist.returncode != 0:
-            # Sử dụng subprocess để chạy lệnh docker pull
-            result = subprocess.run(['docker', 'pull', "-q", imageName], check=True, capture_output=True, text=True)
-        
-    except subprocess.CalledProcessError as e:
-        # Nếu lệnh chạy không thành công, in thông báo lỗi và output của lệnh docker pull (nếu cần)
-        log(f"\tError: {e.stderr}")
-
 def pullImage(imageName):
     try:
         # Sử dụng subprocess để chạy lệnh docker pull
@@ -42,6 +26,20 @@ def pullImage(imageName):
         log(f"\tERROR: Kéo image {imageName} thất bại. ❌")
         print(f"==> Error detail: {e.stderr}")
 
+# Hàm để lấy ra tên user trong cú pháp USER trên Dockerfile
+def extractUser(dockerHistoryArray):
+    # Tìm kiếm chuỗi "USER"
+    for i in range(len(dockerHistoryArray)):
+        if i != len(dockerHistoryArray) - 1:
+            userMatch = re.search(r'\s(USER)\s', dockerHistoryArray[i])
+            if userMatch:
+                userIndex = userMatch.end()
+                nextSpaceIndex = dockerHistoryArray[i].find(" ", userIndex)
+                if nextSpaceIndex != -1:
+                    userValue = dockerHistoryArray[i][userIndex:nextSpaceIndex].strip()
+                    return userValue
+            else:
+                return None
 
 # Hàm để lấy ra tên file/thư mục được đẩy vào trong image
 def extractFolderFromAddOrCopySyntax(line):
@@ -55,15 +53,15 @@ def extractFolderFromAddOrCopySyntax(line):
             in_index = in_match.end()
             next_space_index = line.find(" ", in_index)
             if next_space_index != -1:
-                value = line[in_index:next_space_index].strip()
-                return value
+                foldersValue = line[in_index:next_space_index].strip()
+                return foldersValue
         else:
             # Nếu không có "in", lấy giá trị từ "# buildkit" tới dấu cách thứ 2 trước nó
             buildkit_match = re.compile(r'(.*) # buildkit')
             buildkit_match = buildkit_match.search(line)
             if buildkit_match:
-                value = buildkit_match.group(1).rstrip().rsplit(' ', 2)[-1]
-                return value
+                foldersValue = buildkit_match.group(1).rstrip().rsplit(' ', 2)[-1]
+                return foldersValue
     return None
 
 # Hàm dùng để lấy ra tên đường dẫn tuyệt đối thay thế cho đường dẫn tương đối '.' hoặc './'
@@ -117,7 +115,7 @@ def lsFromRoot(input):
 
     return list(lines)
 
-def copyFromContainerToHost(normalizeImage, list_folder, container_id):
+def copyFromContainerToHost(normalizeImage, list_folder, containerID):
     # Tạo thư mục lưu trữ file/thư mục từ image sang host
     # subprocess.getoutput(f"mkdir -p /tmp/checkfilesize/{normalizeImage}")
     subprocess.getoutput(f"[ -d /tmp/checkfilesize/{normalizeImage} ] && rm -rf /tmp/checkfilesize/{normalizeImage}")
@@ -137,49 +135,61 @@ def copyFromContainerToHost(normalizeImage, list_folder, container_id):
             subprocess.getoutput(f"mkdir -p /tmp/checkfilesize/{normalizeImage}{child_path}")
         else: 
             child_path = ''
-        subprocess.getoutput(f"docker cp {container_id}:{item} /tmp/checkfilesize/{normalizeImage}{child_path}")
+        subprocess.getoutput(f"docker cp {containerID}:{item} /tmp/checkfilesize/{normalizeImage}{child_path}")
     # trả về  đường dẫn lưu trữ files
     return f"/tmp/checkfilesize/{normalizeImage}"
 
-def processCopyFromContainerToHost(image_name):
+def getDockerHistory(imageName):
+    # Lấy ra thông tin docker history của image
+    dockerHistoryOutput = subprocess.getoutput(f"docker history {imageName} --no-trunc")
+    historyOutputList = dockerHistoryOutput.split("\n")
+
+    return historyOutputList
+
+def processGetUser(imageName):
+    # Lấy ra thông tin docker history của image
+    dockerHistoryOutputList = getDockerHistory(imageName)
+    userValue = extractUser(dockerHistoryOutputList)
+    return userValue
+
+def processCopyFromContainerToHost(imageName):
     # Chuẩn hóa tên image thành format có thể đặt thành tên folder
-    normalizeImage = re.sub('[\/\\-:\s]+', '_', image_name)
+    normalizeImage = re.sub('[\/\\-:\s]+', '_', imageName)
 
     # Lấy ra thông tin docker history của image
-    docker_history_output = subprocess.getoutput(f"docker history {image_name} --no-trunc")
-    docker_history_output_list = docker_history_output.split("\n")
+    dockerHistoryOutputList = getDockerHistory(imageName)
 
-    things_add_to_image = getThingsAddToImage(docker_history_output_list)
+    thingsAddToImage = getThingsAddToImage(dockerHistoryOutputList)
 
     # Tạo container mà không cần start
-    container_id = subprocess.getoutput(f"docker create {image_name}")
+    containerID = subprocess.getoutput(f"docker create {imageName}")
     # Cần kiểm tra tạo container thành công không
 
     # Nếu có COPY/ADD vào đường dẫn /
-    if "/" in things_add_to_image:
+    if "/" in thingsAddToImage:
         # Xuất ra danh sách tất cả file trong image
-        container_list_files = subprocess.getoutput(f"docker export {container_id} | tar t")
+        container_list_files = subprocess.getoutput(f"docker export {containerID} | tar t")
 
         # Lấy ra danh sách file/thư mục trong đường dẫn /
         root_ls = lsFromRoot(container_list_files)
 
         # Lấy ra các file/thư mục khác với các thư mục filesystem mặc định trong đường dẫn /
-        new_things_in_root = getNewThingsInRoot(root_ls)
+        newThingsInRoot = getNewThingsInRoot(root_ls)
 
-        # Loại bỏ / ra khỏi mảng things_add_to_image
-        things_add_to_image.remove("/")
+        # Loại bỏ / ra khỏi mảng thingsAddToImage
+        thingsAddToImage.remove("/")
 
-        # Gom 2 mảng new_things_in_root và things_add_to_image lại với nhau
-        final_list_add_to_image = new_things_in_root + things_add_to_image
+        # Gom 2 mảng newThingsInRoot và thingsAddToImage lại với nhau
+        finalListAddToImage = newThingsInRoot + thingsAddToImage
     else:
-        final_list_add_to_image = things_add_to_image
+        finalListAddToImage = thingsAddToImage
         
-    stored_path = copyFromContainerToHost(normalizeImage, final_list_add_to_image, container_id)
+    stored_path = copyFromContainerToHost(normalizeImage, finalListAddToImage, containerID)
     # print(final_list_add_to_image)
     
     # Xóa các file symbolic links để  tránh xảy ra lỗi
     subprocess.getoutput("find " + stored_path + " -type l -ls -exec rm -f {} \;")
-    output = [stored_path, container_id]
+    output = [stored_path, containerID]
     return output
 
 def clean(containerID1, containerID2, image1, image2, storedPath1, storedPath2):
