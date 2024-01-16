@@ -6,26 +6,26 @@ class arguments():
     def argsFunc():
         parser = ArgumentParser()
         parser.add_argument(
-            "--old-image",
+            "--old",
             "-o",
             type=str,
             help = "Old image with version. Example: mysql:1.2"
         )
         parser.add_argument(
-            "--new-image",
+            "--new",
             "-n",
             type=str,
             help = "New image with version. Example: mysql:1.3"
         )
-        # parser.add_argument(
-        #     "--version",
-        #     "-v",
-        #     type=str,
-        #     help = "The release version. Example: R1"
-        # )
+        parser.add_argument(
+            "--version",
+            "-v",
+            type=str,
+            help = "The release version. Example: R1"
+        )
         parser.add_argument(
             "-p",
-            "--product-name",
+            "--product",
             type=str,
             nargs= "+",
             help = "The product name. Example: MISA AMIS"
@@ -39,16 +39,16 @@ class arguments():
         # )
         argsList = []
         args = vars(parser.parse_args())
-        oldOmage = args["old-image"]
-        newImage = args["new-image"]
-        # version = args["version"]
-        productName = args["product-name"]
-        if args["product-name"]: productName = ' '.join(args["product-name"])
+        oldOmage = args["old"]
+        newImage = args["new"]
+        version = args["version"]
+        productName = args["product"]
+        if args["product"]: productName = ' '.join(args["product"])
         # output = args["output"]
         
         argsList.append(oldOmage)
         argsList.append(newImage)
-        # argsList.append(version)
+        argsList.append(version)
         argsList.append(productName)
         # argsList.append(output)
 

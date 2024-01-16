@@ -21,12 +21,17 @@ finishCompareFiles = False
 failCompareFiles = False
 finishOutput = False
 failOutput = False
+pathError = False
+storedPath1 = ""
+storedPath2 = ""
+dirPath1 = ""
+dirPath2 = ""
+containerID1 = ""
+containerID2 = ""
 filesDir1 = []
 filesDir2 = []
 listFiles = []
 result = []
-pathError = False
-connectError = False
 
 def threadExtractFiles():
     time.sleep(0.5)
@@ -50,9 +55,13 @@ def threadExtractFiles():
         global listFiles
         global filesDir1
         global filesDir2
+        global dirPath1
+        global dirPath2
+        global containerID1
+        global containerID2
+        global storedPath1
+        global storedPath2
         global breakpoint
-        global pathError
-        global connectError
         try:
             print('\n[+] Đang trích xuất image...')
             # if not algorithms.checkPath(argValues[1], argValues[2]):
@@ -61,15 +70,19 @@ def threadExtractFiles():
             #     print('\n❌😨😨 ERROR: Đường dẫn 2 không đúng với mã phát hành mới. Vui lòng kiểm tra lại!')
             #     sys.exit()
             if not argValues[0]:
-                print('[+] INFO: Giá trị old image bằng rỗng.')
+                print('[+] INFO: Giá trị old image để trống.')
                 print('\n--- Bỏ qua old image! ✅')
             else:
                 print('[+] Trích xuất old image...')
-                extractImageAlgs.process_to_copy_from_container_to_host(argValues[0])
+                extractOutput1 = extractImageAlgs.process_to_copy_from_container_to_host(argValues[0])
+                storedPath1 = extractOutput1[0]
+                containerID1 = extractOutput1[1]
                 print('\n--- Trích xuất old image thành công! ✅')
             time.sleep(0.5)
             print('\n[+] Trích xuất new image...')
-            extractImageAlgs.process_to_copy_from_container_to_host(argValues[1])
+            extractOutput2 = extractImageAlgs.process_to_copy_from_container_to_host(argValues[1])
+            storedPath2 = extractOutput2[0]
+            containerID2 = extractOutput2[1]
             print('\n--- Trích xuất new image thành công! ✅')
             finishExtractFiles = True
 
@@ -116,9 +129,10 @@ def threadGetFiles():
         global listFiles
         global filesDir1
         global filesDir2
+        global storedPath1
+        global storedPath2
         global breakpoint
         global pathError
-        global connectError
         try:
             print('\n[+] Đang duyệt files...')
             # if not algorithms.checkPath(argValues[1], argValues[2]):
@@ -133,27 +147,17 @@ def threadGetFiles():
                 print('\n--- Duyệt thư mục 1 thành công! ✅')
             else:
                 print('\n[+] Duyệt files trên thư mục 1...')
-                filesDir1 = algorithms.getFiles(argValues[0])
+                filesDir1 = algorithms.getFiles(storedPath1)
                 listFiles.append(filesDir1)
                 print('\n--- Duyệt thư mục 1 thành công! ✅')
             time.sleep(0.5)
             print('\n[+] Duyệt files trên thư mục 2...')
-            filesDir2 = algorithms.getFiles(argValues[1])
+            filesDir2 = algorithms.getFiles(storedPath2)
             print('\n--- Duyệt thư mục 2 thành công! ✅')
             # print(filesDir1)
             listFiles.append(filesDir2)
             finishGetFiles = True
         
-        except FileNotFoundError as e1:
-            breakpoint = True
-            connectError = True
-            print('\n❌😨😨 ERROR: Không tìm thấy file cấu hình SMB. Vui lòng kiểm tra lại!')
-            sys.exit()
-        except json.decoder.JSONDecodeError as e2:
-            breakpoint = True
-            connectError = True
-            print(f"\n❌😨😨 ERROR: Trích xuất dữ liệu từ file cấu hình bị lỗi. Vui lòng kiểm tra lại file!")
-            sys.exit()
         except Exception as e3:
             failGetFiles = True
             breakpoint = True
@@ -289,6 +293,7 @@ if __name__ == "__main__":
     ''')
     start = time.time()
     time.sleep(0.5)
+    threadExtractFiles()
     threadGetFiles()
     end = time.time()
     if breakpoint == False:
