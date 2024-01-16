@@ -208,7 +208,8 @@ def writeToExcelFile(filesDir1, filesDir2, resultList, dir1, dir2, version, prod
     wb.save(filename)
     # saveExcelToSMB(filename, r'\\storage1\DU_LIEU_CHUYEN_RA_NGOAI\Compare_file', productName)
     # saveExcelToSMB(filename, r'\\10.1.36.8\Shared\LAB_TO_LOCAL\DXHOANG', productName)
-    return filename
+    absolutePath = os.getcwd()
+    return f"{absolutePath}/{filename}"
 
 def detectHeaderSMBFile(pathToFile):
     # fileType = magic.from_file(pathToFile)
