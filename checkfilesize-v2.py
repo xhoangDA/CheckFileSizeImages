@@ -36,6 +36,8 @@ def pullImages():
 
         if checkExistImage1 == 0:
             extractImageAlgs.log(f"\tINFO: Old image đã tồn tại. Bỏ qua pull image.")
+        elif checkExistImage1 == 2:
+            pass
         else:
             extractImageAlgs.log(f"\tINFO: Old image chưa tồn tại. Thực hiện kéo image {argValues[0]}...")
             exitCodePullImage1 = extractImageAlgs.pullImage(argValues[0])
@@ -78,7 +80,7 @@ def extractFiles2Image():
         #     print('\n❌😨😨 ERROR: Đường dẫn 2 không đúng với mã phát hành mới. Vui lòng kiểm tra lại.')
         #     sys.exit()
         if not argValues[0]:
-            extractImageAlgs.log('\tINFO: Giá trị old image để trống. Bỏ qua old image.')
+            extractImageAlgs.log('\tINFO: Bỏ qua trích xuất old image.')
         else:
             extractImageAlgs.log('\tINFO: Trích xuất old image...')
             extractOutput1 = extractImageAlgs.process_to_copy_from_container_to_host(argValues[0])
