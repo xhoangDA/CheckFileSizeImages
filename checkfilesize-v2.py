@@ -26,8 +26,8 @@ def pullImages():
     try:
         print('*** Kiểm tra tồn tại images...')
         if not argValues[0]:
-            extractImageAlgs.log('\t  INFO: Giá trị old image để trống.')
-            extractImageAlgs.log('\t  INFO: Bỏ qua old image.')
+            extractImageAlgs.log('\tINFO: Giá trị old image để trống.')
+            extractImageAlgs.log('\tINFO: Bỏ qua old image.')
             checkExistImage1 = 2
         else:
             checkExistImage1 = extractImageAlgs.checkExistImage(argValues[0])
