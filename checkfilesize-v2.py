@@ -191,10 +191,10 @@ if __name__ == "__main__":
     ''')
     print(f"""
 INPUT:
-    Old image: {argValues[0]}
-    New image: {argValues[1]}
-    Product name: {argValues[2]}
-    Version: {argValues[3]}
+[+] OLD IMAGE:      {argValues[0]}
+[+] NEW IMAGE:      {argValues[1]}
+[+] PRODUCT NAME:   {argValues[2]}
+[+] VERSION:        {argValues[3]}
 """)
     print("BẮT ĐẦU THỰC HIỆN CHECKFILESIZE\n")
     start = time.time()
