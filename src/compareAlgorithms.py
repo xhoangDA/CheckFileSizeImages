@@ -138,20 +138,20 @@ def checkFilesWithLargeFilesize(status, sizeChange, oldSize):
                 warning = "File sau khi chỉnh sửa có kích thước lớn hơn nhiều so với file cũ: " + '{:.2f}'.format(sizeChangeKB) + " (KB)"
     return warning
 
-def writeToExcelFile(filesDir1, filesDir2, resultList, dir1, dir2, version, productName):
+def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, version, productName):
     curent_date = datetime.date.today().strftime("%d%m%Y")
     wb = openpyxl.Workbook()
     # wb = openpyxl.load_workbook(outputFile)
     ws = wb.active
     ws["A1"] = "BẢNG KHAI BÁO CẤU TRÚC VÀ DUNG LƯỢNG PHÁT HÀNH SẢN PHẨM: " + productName
     ws.merge_cells("A1:H1")
-    ws["A2"] = "Phiên bản:"
-    ws["B2"] = dir1
-    if dir1 == [['', '', '', 0, '', '']]:
+    ws["A2"] = "Tên image:"
+    ws["B2"] = f"Old image: {image1}"
+    if image1 == [['', '', '', 0, '', '']]:
         ws["F2"] = "Số files: 0 - Dung lượng: " + totalSize(filesDir1) + "MB"
     else:
         ws["F2"] = "Số files: " +  countFiles(filesDir1) + " - Dung lượng: " + totalSize(filesDir1) + "MB"
-    ws["B3"] = dir2
+    ws["B3"] = f"Old image: {image2}"
     ws["F3"] = "Số files: " +  countFiles(filesDir2) + " - Dung lượng: " + totalSize(filesDir2) + "MB"
     # fieldNames = ["STT", version, "Tình trạng", "Dung lượng cũ (KB)", "Dung lượng mới (KB)", "Chênh lệch (B)", "Mục đích sử dụng", "Ghi chú"]
     fieldNames = ["STT", version, "Tình trạng", "Dung lượng cũ (KB)", "Dung lượng mới (KB)", "Chênh lệch (B)", "Mục đích sử dụng", "Ghi chú", "File extension", "Header file"]
