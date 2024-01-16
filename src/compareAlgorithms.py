@@ -41,7 +41,7 @@ def getFiles(dir_path):
 
     listFiles = []
     try:
-        for path, subdirs, files in os.walk(dir_path):
+        for (path, subdirs, files) in os.walk(dir_path):
             for name in files:
                 filePath = os.path.join(path, name)
                 relativePathDir = filePath.replace(dir_path,"")
@@ -113,7 +113,7 @@ def compareList(list1, list2):
     for k in cloneList1:
         serial += 1
         filesizeKB = round (k[3] / 1024, 1)
-        element =  [serial, '\\' + k[2],"Xóa", filesizeKB, None, -k[3], "Không còn sử dụng", '', k[4], k[5]]
+        element =  [serial, '' + k[2], "Xóa", filesizeKB, None, -k[3], "Không còn sử dụng", '', k[4], k[5]]
         result.append(element)
 
     return result
@@ -208,7 +208,7 @@ def writeToExcelFile(filesDir1, filesDir2, resultList, dir1, dir2, version, prod
     wb.save(filename)
     # saveExcelToSMB(filename, r'\\storage1\DU_LIEU_CHUYEN_RA_NGOAI\Compare_file', productName)
     # saveExcelToSMB(filename, r'\\10.1.36.8\Shared\LAB_TO_LOCAL\DXHOANG', productName)
-
+    return filename
 
 def detectHeaderSMBFile(pathToFile):
     # fileType = magic.from_file(pathToFile)
@@ -329,3 +329,8 @@ def checkFileType(fileExt, fileType):
     elif fileType == 'empty': return 'Không phân tích được file'
     else:
         return 'File có định dạng lạ'
+    
+
+if __name__ == '__main__':
+    listFiles = getFiles('/tmp/checkfilesize/dxhoang_defectdojo_nginx_fix_csrf_2')
+    print(listFiles)
