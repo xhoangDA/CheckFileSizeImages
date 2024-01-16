@@ -86,13 +86,13 @@ def extractFiles2Image():
             extractOutput1 = extractImageAlgs.processCopyFromContainerToHost(argValues[0])
             storedPath1 = extractOutput1[0]
             containerID1 = extractOutput1[1]
-            extractImageAlgs.log('\tINFO: Trích xuất old image hoàn tất. ✅')
+            extractImageAlgs.log('\tINFO: Trích xuất old image hoàn tất.')
         time.sleep(0.5)
         extractImageAlgs.log('\tINFO: Trích xuất new image...')
         extractOutput2 = extractImageAlgs.processCopyFromContainerToHost(argValues[1])
         storedPath2 = extractOutput2[0]
         containerID2 = extractOutput2[1]
-        extractImageAlgs.log('\tINFO: Trích xuất new image hoàn tất. ✅')
+        extractImageAlgs.log('\tINFO: Trích xuất new image hoàn tất.')
 
     except Exception as e:
         extractImageAlgs.log(f"\tERROR: Trích xuất file thất bại. ❌")
@@ -116,16 +116,16 @@ def getFiles2Folder():
             extractImageAlgs.log('\tINFO: Duyệt files trên thư mục 1')
             filesDir1 = [['', '', '', 0, '', '']]
             listFiles.append(filesDir1)
-            extractImageAlgs.log('\tINFO: Duyệt thư mục 1 hoàn tất. ✅')
+            extractImageAlgs.log('\tINFO: Duyệt thư mục 1 hoàn tất.')
         else:
             extractImageAlgs.log('\tINFO: Duyệt files trên thư mục 1...')
             filesDir1 = algorithms.getFiles(storedPath1)
             listFiles.append(filesDir1)
-            extractImageAlgs.log('\tINFO: Duyệt thư mục 1 hoàn tất. ✅')
+            extractImageAlgs.log('\tINFO: Duyệt thư mục 1 hoàn tất.')
         time.sleep(0.5)
         extractImageAlgs.log('\tINFO: Duyệt files trên thư mục 2...')
         filesDir2 = algorithms.getFiles(storedPath2)
-        extractImageAlgs.log('\tINFO: Duyệt thư mục 2 hoàn tất. ✅')
+        extractImageAlgs.log('\tINFO: Duyệt thư mục 2 hoàn tất.')
         # extractImageAlgs.log(filesDir1)
         listFiles.append(filesDir2)
     
@@ -143,22 +143,35 @@ def compare():
         result.append(listFiles[0])
         result.append(listFiles[1])
         result.append(compareResult)
-        extractImageAlgs.log(f"\tINFO: So sánh file hoàn tất. ✅")
+        extractImageAlgs.log(f"\tINFO: So sánh file hoàn tất.")
     except Exception as e:
         extractImageAlgs.log(f"\tERROR: So sánh file thất bại. ❌")
         print(f"==> Error detail: {e}")
         sys.exit(100)
 
 def output():
-    global finishOutput
-    global failOutput
     global result
     print('*** Xuất file kết quả...')
     try:
         fileOutput = algorithms.writeToExcelFile(result[0], result[1], result[2], argValues[0], argValues[1], argValues[2], argValues[3])
-        extractImageAlgs.log(f"\tINFO: Xuất file kết quả hoàn tất ✅")
+        extractImageAlgs.log(f"\tINFO: Xuất file kết quả hoàn tất")
         extractImageAlgs.log(f"\tINFO: Đường dẫn file kết quả: {fileOutput}")
         # TerminalActions.createTable(result[2])
+    except Exception as e:
+        extractImageAlgs.log(f"\tERROR: {e}")
+        sys.exit(100)
+
+def checkAddUser():
+    print('*** Kiểm tra đã có USER trong Dockerfile chưa...')
+    try:
+        userValue1 = extractImageAlgs.processGetUser(argValues[0])
+        userValue2 = extractImageAlgs.processGetUser(argValues[1])
+        if userValue1 and userValue2:
+            extractImageAlgs.log(f"\tINFO: Hai image đã có cú pháp USER trên Dockerfile - Tên user: {userValue2}")
+        elif userValue2 == None and userValue1:
+            extractImageAlgs.log(f"\tWARNING: New image chưa có cú pháp USER trên Dockerfile. Cần bổ sung thêm.")
+        else:
+            extractImageAlgs.log(f"\tWARNING: Các image chưa có cú pháp USER trên Dockerfile. Cần bổ sung thêm.")
     except Exception as e:
         extractImageAlgs.log(f"\tERROR: {e}")
         sys.exit(100)
@@ -173,7 +186,7 @@ def clean():
         cleanReturnCode = extractImageAlgs.clean(containerID1, containerID2, argValues[0], argValues[1], storedPath1, storedPath2)
         if cleanReturnCode != None: 
             if all(element == 0 for element in cleanReturnCode):
-                extractImageAlgs.log(f"\tINFO: Dọn dẹp hoàn tất ✅")
+                extractImageAlgs.log(f"\tINFO: Dọn dẹp hoàn tất")
             else: 
                 sys.exit(100)
         else: 
@@ -202,6 +215,7 @@ INPUT:
     start = time.time()
     time.sleep(0.5)
     pullImages()
+    checkAddUser()
     time.sleep(0.5)
     extractFiles2Image()
     getFiles2Folder()
@@ -209,5 +223,5 @@ INPUT:
     compare()
     output()
     clean()
-    print('CHECKFILESIZE THÀNH CÔNG !!!')
+    print('CHECKFILESIZE THÀNH CÔNG !!! ✅')
     print("Tổng thời gian chạy: " + str(end - start))
