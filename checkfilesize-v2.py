@@ -83,13 +83,13 @@ def extractFiles2Image():
             extractImageAlgs.log('\tINFO: Bỏ qua trích xuất old image.')
         else:
             extractImageAlgs.log('\tINFO: Trích xuất old image...')
-            extractOutput1 = extractImageAlgs.process_to_copy_from_container_to_host(argValues[0])
+            extractOutput1 = extractImageAlgs.processCopyFromContainerToHost(argValues[0])
             storedPath1 = extractOutput1[0]
             containerID1 = extractOutput1[1]
             extractImageAlgs.log('\tINFO: Trích xuất old image hoàn tất. ✅')
         time.sleep(0.5)
         extractImageAlgs.log('\tINFO: Trích xuất new image...')
-        extractOutput2 = extractImageAlgs.process_to_copy_from_container_to_host(argValues[1])
+        extractOutput2 = extractImageAlgs.processCopyFromContainerToHost(argValues[1])
         storedPath2 = extractOutput2[0]
         containerID2 = extractOutput2[1]
         extractImageAlgs.log('\tINFO: Trích xuất new image hoàn tất. ✅')
