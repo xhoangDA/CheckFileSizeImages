@@ -9,7 +9,6 @@ from src import extractImage
 argValues = arguments.argsFunc()
 algorithms = compareAlgorithms
 extractImageAlgs = extractImage
-# TerminalActions = terminalActions
 
 storedPath1 = ""
 storedPath2 = ""
@@ -21,6 +20,7 @@ filesDir1 = []
 filesDir2 = []
 listFiles = []
 result = []
+fileOutput = ""
 
 def pullImages():
     try:
@@ -151,27 +151,32 @@ def compare():
 
 def output():
     global result
+    global fileOutput
     print('*** Xuất file kết quả...')
     try:
         fileOutput = algorithms.writeToExcelFile(result[0], result[1], result[2], argValues[0], argValues[1], argValues[2], argValues[3])
         extractImageAlgs.log(f"\tINFO: Xuất file kết quả hoàn tất")
         extractImageAlgs.log(f"\tINFO: Đường dẫn file kết quả: {fileOutput}")
-        # TerminalActions.createTable(result[2])
+        extractImageAlgs.log(f"\tINFO: Kết nối tới SMB...")
+        algorithms.connectSMB(argValues[4])
+        time.sleep(0.8)
+        extractImageAlgs.log(f"\tINFO: Kết nối SMB thành công")
+        extractImageAlgs.log(f"\tINFO: Đẩy file kết quả vào SMB storage...")
+        algorithms.saveExcelToSMB(fileOutput, r'\\storage1\DU_LIEU_CHUYEN_RA_NGOAI\Compare_file', argValues[2])        
+        extractImageAlgs.log(f"\tINFO: Đẩy file kết quả vào SMB storage thành công")
     except Exception as e:
-        extractImageAlgs.log(f"\tERROR: {e}")
+        extractImageAlgs.log(f"\tERROR: Có lỗi trong quá trình lưu file kết quả. ❌")
+        print(f"==> Error detail: {e}")
         sys.exit(100)
 
 def checkAddUser():
     print('*** Kiểm tra đã có USER trong Dockerfile chưa...')
     try:
-        userValue1 = extractImageAlgs.processGetUser(argValues[0])
-        userValue2 = extractImageAlgs.processGetUser(argValues[1])
-        if userValue1 and userValue2:
-            extractImageAlgs.log(f"\tINFO: Hai image đã có cú pháp USER trên Dockerfile - Tên user: {userValue2}")
-        elif userValue2 == None and userValue1:
-            extractImageAlgs.log(f"\tWARNING: New image chưa có cú pháp USER trên Dockerfile. Cần bổ sung thêm.")
+        userValue = extractImageAlgs.processGetUser(argValues[1])
+        if userValue:
+            extractImageAlgs.log(f"\tINFO: New image đã có cú pháp USER trên Dockerfile - Tên user: {userValue}")
         else:
-            extractImageAlgs.log(f"\tWARNING: Các image chưa có cú pháp USER trên Dockerfile. Cần bổ sung thêm.")
+            extractImageAlgs.log(f"\tWARNING: New image chưa có cú pháp USER trên Dockerfile. Cần bổ sung thêm.")
     except Exception as e:
         extractImageAlgs.log(f"\tERROR: {e}")
         sys.exit(100)
@@ -181,9 +186,10 @@ def clean():
     global storedPath2
     global containerID1
     global containerID2
+    global fileOutput
     print('*** Dọn dẹp sau kiểm tra...')
     try:
-        cleanReturnCode = extractImageAlgs.clean(containerID1, containerID2, argValues[0], argValues[1], storedPath1, storedPath2)
+        cleanReturnCode = extractImageAlgs.clean(containerID1, containerID2, argValues[0], argValues[1], storedPath1, storedPath2, fileOutput)
         if cleanReturnCode != None: 
             if all(element == 0 for element in cleanReturnCode):
                 extractImageAlgs.log(f"\tINFO: Dọn dẹp hoàn tất")
@@ -195,23 +201,25 @@ def clean():
         extractImageAlgs.log(f"\tERROR: {e}")
         sys.exit(100)
 
+
 if __name__ == "__main__":
     print('''
-       _               _            __ _ _                 _                     _              _ 
-      | |             | |          / _(_) |               (_)                   | |            | |
-   ___| |__   ___  ___| | ________| |_ _| | ___ ______ ___ _ _______  ___ ______| |_ ___   ___ | |
-  / __| '_ \ / _ \/ __| |/ /______|  _| | |/ _ \______/ __| |_  / _ \/ __|______| __/ _ \ / _ \| |
- | (__| | | |  __/ (__|   <       | | | | |  __/      \__ \ |/ /  __/\__ \      | || (_) | (_) | |
-  \___|_| |_|\___|\___|_|\_\      |_| |_|_|\___|      |___/_/___\___||___/       \__\___/ \___/|_|                                                                                                                                                         
-    ''')
+  _______           __    _____ __    _____           
+ / ___/ /  ___ ____/ /__ / __(_) /__ / __(_)__ ___ ___
+/ /__/ _ \/ -_) __/  '_// _// / / -_)\ \/ /_ // -_|_-<
+\___/_//_/\__/\__/_/\_\/_/ /_/_/\__/___/_//__/\__/___/  
+                              
+                                            °˚°𝘠𝘰𝘶𝘯𝘨𝘎𝘰𝘭𝘥°˚°  
+''')
     print(f"""
 INPUT:
-[+] OLD IMAGE:      {argValues[0]}
-[+] NEW IMAGE:      {argValues[1]}
-[+] PRODUCT NAME:   {argValues[2]}
-[+] VERSION:        {argValues[3]}
+[+] OLD IMAGE:          {argValues[0]}
+[+] NEW IMAGE:          {argValues[1]}
+[+] PRODUCT NAME:       {argValues[2]}
+[+] VERSION:            {argValues[3]}
+[+] SMB CONFIG FILE:    {argValues[4]}
 """)
-    print("BẮT ĐẦU THỰC HIỆN CHECKFILESIZE\n")
+    print("BẮT ĐẦU THỰC HIỆN CHECKFILESIZE")
     start = time.time()
     time.sleep(0.5)
     pullImages()
