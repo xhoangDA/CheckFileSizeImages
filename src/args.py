@@ -18,38 +18,39 @@ class arguments():
             help = "New image with version. Example: mysql:1.3"
         )
         parser.add_argument(
-            "--version",
-            "-v",
-            type=str,
-            help = "The release version. Example: R1"
-        )
-        parser.add_argument(
             "-p",
             "--product",
             type=str,
             nargs= "+",
             help = "The product name. Example: MISA AMIS"
         )
-        # parser.add_argument(
-        #     "--output",
-        #     "-o",
-        #     default = "result",
-        #     type=str,
-        #     help = "The location file to write the report output to (default: \\\\storage1\\DU_LIEU_CHUYEN_RA_NGOAI\\Compare_file)"
-        # )
+        parser.add_argument(
+            "--version",
+            "-v",
+            type=str,
+            help = "The release version. Example: R1"
+        )
+        parser.add_argument(
+            "--authen",
+            "-a",
+            type=str,
+            help = "Path to credential file (JSON format). Example: smb_config.json"
+        )        
         argsList = []
         args = vars(parser.parse_args())
         oldOmage = args["old"]
         newImage = args["new"]
-        version = args["version"]
         productName = args["product"]
+        version = args["version"]
+        authen = args["authen"]
         if args["product"]: productName = ' '.join(args["product"])
         # output = args["output"]
         
         argsList.append(oldOmage)
         argsList.append(newImage)
-        argsList.append(version)
         argsList.append(productName)
+        argsList.append(version)
+        argsList.append(authen)
         # argsList.append(output)
 
         if len(argv) < 1:
@@ -72,5 +73,9 @@ class arguments():
             print("\nError: The product name required!\n")
             parser.print_help()
             sys.exit(1)
+        if not authen:
+            print("\nError: The SMB credential file required!\n")
+            parser.print_help()
+            sys.exit(1)            
         return argsList
     
