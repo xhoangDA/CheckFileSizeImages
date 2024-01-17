@@ -27,19 +27,18 @@ def pullImage(imageName):
         print(f"==> Error detail: {e.stderr}")
 
 # Hàm để lấy ra tên user trong cú pháp USER trên Dockerfile
-def extractUser(dockerHistoryArray):
+def extractUser(historyOutputList):
+    userValue = None
     # Tìm kiếm chuỗi "USER"
-    for i in range(len(dockerHistoryArray)):
-        if i != len(dockerHistoryArray) - 1:
-            userMatch = re.search(r'\s(USER)\s', dockerHistoryArray[i])
-            if userMatch:
-                userIndex = userMatch.end()
-                nextSpaceIndex = dockerHistoryArray[i].find(" ", userIndex)
-                if nextSpaceIndex != -1:
-                    userValue = dockerHistoryArray[i][userIndex:nextSpaceIndex].strip()
-                    return userValue
-            else:
-                return None
+    for element in historyOutputList[::-1]:
+        userMatch = re.search(r'\sUSER\s', element)
+        if userMatch:
+            userIndex = userMatch.end()
+            nextSpaceIndex = element.find(" ", userIndex)
+            if nextSpaceIndex != -1:
+                userValue = element[userIndex:nextSpaceIndex].strip()
+                break
+    return userValue
 
 # Hàm để lấy ra tên file/thư mục được đẩy vào trong image
 def extractFolderFromAddOrCopySyntax(line):
@@ -147,10 +146,13 @@ def getDockerHistory(imageName):
     return historyOutputList
 
 def processGetUser(imageName):
-    # Lấy ra thông tin docker history của image
-    dockerHistoryOutputList = getDockerHistory(imageName)
-    userValue = extractUser(dockerHistoryOutputList)
-    return userValue
+    if imageName:
+        # Lấy ra thông tin docker history của image
+        dockerHistoryOutputList = getDockerHistory(imageName)
+        userValue = extractUser(dockerHistoryOutputList)
+        return userValue
+    else: 
+        return None
 
 def processCopyFromContainerToHost(imageName):
     # Chuẩn hóa tên image thành format có thể đặt thành tên folder
