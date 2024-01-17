@@ -4,41 +4,31 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 import smbclient
 import magic
-import tempfile
-import time
 import datetime
 import json
+import re
+import datetime
+import sys
+
+def log(message):
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    log_message = f"[{formatted_time}] {message}"
+    print(log_message)
 
 def connectSMB(filePath):
     with open(filePath, 'r') as config_file:
         config_data = json.load(config_file)
     smb_username = config_data["username"]
     smb_password = config_data["password"]
-# try:
-    smbclient.ClientConfig(username=smb_username, password=smb_password)
-# except Exception as e:
+    try:
+        smbclient.ClientConfig(username=smb_username, password=smb_password)
+    except Exception as e:
+        log("\tERROR: Kết nối SMB thất bại. ❌")
+        print("==> Error detail: {e}")
  
-def getSMBFiles(dir_path):
-    listFiles = []
-    if dir_path[-1] != '/' or dir_path[-1] != '\\':
-        dir_path = dir_path + '/'
-    dir_path = dir_path.replace('\\', '/')
-    for path, subdirs, files in smbclient.walk(dir_path):
-        for name in files:
-            filePath = os.path.join(path, name)
-            relativePathDir = filePath.replace(dir_path,"").replace("/","\\")
-            pathWithoutFilename = relativePathDir.replace(name,"")
-            # hàm lấy giá trị filesize (đơn vị byte)
-            fileSize = smbclient.stat(filePath).st_size
-            fileExt = fileExtension(filePath)
-            fileType = detectHeaderSMBFile(filePath)
-            element = [pathWithoutFilename, name, relativePathDir, fileSize, fileExt, fileType]
-            listFiles.append(element)
-    return listFiles
-
 # function to get all files recursively on the diretory 
 def getFiles(dir_path):
-
     listFiles = []
     try:
         for (path, subdirs, files) in os.walk(dir_path):
@@ -110,12 +100,12 @@ def compareList(list1, list2):
                     break
                 else:
                     continue
-    for k in cloneList1:
-        serial += 1
-        filesizeKB = round (k[3] / 1024, 1)
-        element =  [serial, '' + k[2], "Xóa", filesizeKB, None, -k[3], "Không còn sử dụng", '', k[4], k[5]]
-        result.append(element)
-
+    if cloneList1 != [['', '', '', 0, '', '']]:
+        for k in cloneList1:
+            serial += 1
+            filesizeKB = round (k[3] / 1024, 1)
+            element =  [serial, '' + k[2], "Xóa", filesizeKB, None, -k[3], "Không còn sử dụng", '', k[4], k[5]]
+            result.append(element)
     return result
 
 def countFiles(listFiles):
@@ -138,8 +128,8 @@ def checkFilesWithLargeFilesize(status, sizeChange, oldSize):
                 warning = "File sau khi chỉnh sửa có kích thước lớn hơn nhiều so với file cũ: " + '{:.2f}'.format(sizeChangeKB) + " (KB)"
     return warning
 
-def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, version, productName):
-    curent_date = datetime.date.today().strftime("%d%m%Y")
+def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, productName, version):
+    curentDate = datetime.date.today().strftime("%d%m%Y")
     wb = openpyxl.Workbook()
     # wb = openpyxl.load_workbook(outputFile)
     ws = wb.active
@@ -147,7 +137,7 @@ def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, version, 
     ws.merge_cells("A1:H1")
     ws["A2"] = "Tên image:"
     ws["B2"] = f"Old image: {image1}"
-    if image1 == [['', '', '', 0, '', '']]:
+    if filesDir1 == [['', '', '', 0, '', '']]:
         ws["F2"] = "Số files: 0 - Dung lượng: " + totalSize(filesDir1) + "MB"
     else:
         ws["F2"] = "Số files: " +  countFiles(filesDir1) + " - Dung lượng: " + totalSize(filesDir1) + "MB"
@@ -169,11 +159,13 @@ def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, version, 
     pink_background = PatternFill('solid', start_color = 'FFCBCB')
     yellow_background = PatternFill('solid', start_color = 'FFFFD1')
 
+    #  Decorate cell A1-A2
     ws["A1"].font = big_bold_blue_font
     ws["A1"].alignment = center_aligned_text
     ws["A2"].font = bold12
     ws.row_dimensions[4].height = 28
 
+    #  Decorate cell 4
     for cell in ws[4]:
         cell.font = bold12
         cell.fill = gray_background
@@ -204,24 +196,24 @@ def writeToExcelFile(filesDir1, filesDir2, resultList, image1, image2, version, 
             elif max_width <= len(str(value)): max_width = len(value) + 8
         ws.column_dimensions[str(column_letter)].width = max_width
     
-    filename = '%s_%s_%s.xlsx' % (productName,version,curent_date)
-    wb.save(filename)
-    # saveExcelToSMB(filename, r'\\storage1\DU_LIEU_CHUYEN_RA_NGOAI\Compare_file', productName)
-    # saveExcelToSMB(filename, r'\\10.1.36.8\Shared\LAB_TO_LOCAL\DXHOANG', productName)
-    absolutePath = os.getcwd()
-    return f"{absolutePath}/{filename}"
+    # Chuẩn hóa lại tên image để đưa vào tên file excel
+    normalizeImage = str(image2).replace("192.168.41.109/", "").replace("192.168.101.51/", "")
+    normalizeImage = re.sub('[\/\\-:\s]+', '_', normalizeImage)
 
-def detectHeaderSMBFile(pathToFile):
-    # fileType = magic.from_file(pathToFile)
-    # temp = tempfile.NamedTemporaryFile(prefix='compare_tool')
-    with smbclient.open_file(r""+pathToFile, mode='r',encoding='latin1') as file:
-        data = file.read()
-        data = bytes(data, 'latin1')
-        fileType = magic.from_buffer(data)
-    return fileType
+    # Tạo thư mục lưu trữ output và xuất file excel
+    os.system(f"mkdir -p /tmp/checkfilesize/output/{productName}")
+    filename = '/tmp/checkfilesize/output/%s/%s_%s_%s.xlsx' % (productName, normalizeImage, version, curentDate)
+    # filename = '%s_%s_%s.xlsx' % (normalizeImage, version, curentDate)
+    wb.save(filename)
+
+    return filename
 
 def detectHeaderFile(pathToFile):
     fileType = magic.from_file(pathToFile)
+    # with open(r""+pathToFile, mode='r',encoding='latin1') as file:
+    #     data = file.read()
+    #     data = bytes(data, 'latin1')
+    #     fileType = magic.from_buffer(data)
     return fileType
 
 def fileExtension(pathToFile):
@@ -237,10 +229,11 @@ def checkPath(filePath, version):
     else:
         return False
     
-def saveExcelToSMB(src, desPath, name):
+def saveExcelToSMB(src, desPath, productName):
     curent_year = datetime.date.today().strftime("%Y")
     curent_month = datetime.date.today().strftime("%m")
     listDir1 = smbclient.listdir(desPath)
+    nomarlizeSrc = src.split('/')[-1]
     
     try:
         with open(src, 'rb') as f1:
@@ -253,16 +246,18 @@ def saveExcelToSMB(src, desPath, name):
             smbclient.mkdir(r"" + desPath + "\\" + curent_year + "\\" + "Tháng " + curent_month)
         listDeepPath2 = smbclient.listdir(desPath + "\\" + curent_year + "\\" + "Tháng " + curent_month)
         listDeepPath2 = [item.lower() for item in listDeepPath2]
-        if name.lower() not in listDeepPath2:
-            smbclient.mkdir(r"" + desPath + "\\" + curent_year + "\\" + "Tháng " + curent_month + "\\" + name)
-        with smbclient.open_file(r"" + desPath + "\\" + curent_year + "\\" + "Tháng " + curent_month + "\\" + name + "\\" + src, mode = 'wb') as f2:
+        if productName.lower() not in listDeepPath2:
+            smbclient.mkdir(r"" + desPath + "\\" + curent_year + "\\" + "Tháng " + curent_month + "\\" + productName)
+        with smbclient.open_file(r"" + desPath + "\\" + curent_year + "\\" + "Tháng " + curent_month + "\\" + productName + "\\" + nomarlizeSrc, mode = 'wb') as f2:
             f2.write(content)
-            os.remove(src)
+            # os.remove(src)
     except Exception as e:
-        print(f"ERROR: {e}")
+        log(f"\tERROR: Đẩy file kết quả vào SMB storage thất bại. ❌")
+        print(f"==> Error detail: {e}")
+        sys.exit(100)
     
 def checkFileType(fileExt, fileType):
-    codeFileList = ['.js', '.css', '.scss', '.cshtml', '.html', '.xslt', '.txt', '.map', '.aspx', '.ascx'] #
+    codeFileList = ['.js', '.css', '.scss', '.cshtml', '.html', '.xslt', '.aspx', '.ascx'] #
     textList = ['.txt']
     scriptFile = ['.sh', '.bash', '.bat', '.ps1'] #
     excelFile = ['.xls', '.xlsx', '.ods']   #
@@ -327,11 +322,7 @@ def checkFileType(fileExt, fileType):
             return ''
         else:
             return 'File không đúng định dạng (so sánh với đuôi file)'
-    elif fileType == 'empty': return 'Không phân tích được file'
+    elif fileType == 'empty': 
+        return 'Không phân tích được file'
     else:
         return 'File có định dạng lạ'
-    
-
-if __name__ == '__main__':
-    listFiles = getFiles('/tmp/checkfilesize/dxhoang_defectdojo_nginx_fix_csrf_2')
-    print(listFiles)
